@@ -2,14 +2,19 @@
 using namespace std;
 typedef long long ll;
 
-const int MAXN=5e5+5;
+const int MAXN=5e4+5;
 
 namespace SegmentTree{
 	#define lson ( (k) << 1 )
 	#define rson ( (k) << 1 | 1 )
 	#define mid ( ( (l) + (r) ) >> 1 )
 	struct Node{
-		ll sum,lMax,rMax,Max;
+		int sum;
+		int lMax,rMax,Max;
+		#define sum(x) unit[(x)].sum
+		#define lMax(x) unit[(x)].lMax
+		#define rMax(x) unit[(x)].rMax
+		#define Max(x) unit[(x)].Max
 	};
 	Node unit[MAXN<<2];
 	inline Node combine(const Node& left,const Node& right){
@@ -24,24 +29,12 @@ namespace SegmentTree{
 		unit[k]=combine(unit[lson],unit[rson]);
 		return;
 	}
-	inline void build(int k,int l,int r,ll a[]){
+	inline void build(int k,int l,int r,int a[]){
 		if(l==r){
-			unit[k].sum=unit[k].lMax=unit[k].rMax=unit[k].Max=a[l];
+			sum(k)=lMax(k)=rMax(k)=Max(k)=a[l];
 			return;
 		}
 		build(lson,l,mid,a),build(rson,mid+1,r,a);
-		pushup(k);
-		return;
-	}
-	inline void update(int k,int l,int r,int pos,ll val){
-		if(l==r){
-			unit[k].sum=unit[k].lMax=unit[k].rMax=unit[k].Max=val;
-			return;
-		}
-		if(pos<=mid)
-			update(lson,l,mid,pos,val);
-		else
-			update(rson,mid+1,r,pos,val);
 		pushup(k);
 		return;
 	}
@@ -63,29 +56,18 @@ namespace SegmentTree{
 }
 
 int n,m;
-ll a[MAXN];
+int a[MAXN];
 
 int main(void){
-	scanf("%d%d",&n,&m);
+	scanf("%d",&n);
 	for(int i=1;i<=n;++i)
-		scanf("%lld",&a[i]);
+		scanf("%d",&a[i]);
+	scanf("%d",&m);
 	SegmentTree::build(1,1,n,a);
 	while(m--){
-		static int k,x,y;
-		scanf("%d%d%d",&k,&x,&y);
-		switch(k){
-			case 1:{
-				if(x>y)
-					swap(x,y);
-				ll ans=SegmentTree::query(1,1,n,x,y).Max;
-				printf("%lld\n",ans);
-				break;
-			}
-			case 2:{
-				SegmentTree::update(1,1,n,x,y);
-				break;
-			}
-		}
+		static int x,y;
+		scanf("%d%d",&x,&y);
+		printf("%d\n",SegmentTree::query(1,1,n,x,y).Max);
 	}
 	return 0;
 }
