@@ -12,12 +12,11 @@ inline int read(void){
 	return res;
 }
 
-const int MAXN=100000+5;
-const int MAXM=200000+5;
-const int MAXQ=100000+5;
-const int MAXS=200000+5;
+const int MAXN=500000+5;
+const int MAXM=1000000+5;
+const int MAXQ=500000+5;
 
-int n,m;
+int n,m,q;
 int tot;
 
 namespace Tree{
@@ -34,8 +33,7 @@ namespace Tree{
 		return;
 	}
 	int fa[MAXN<<1],dep[MAXN<<1];
-	int son[MAXN<<1],size[MAXN<<1];
-	int dis[MAXN<<1];
+	int size[MAXN<<1],son[MAXN<<1];
 	inline void DFS1(reg int u,reg int father){
 		size[u]=1;
 		fa[u]=father;
@@ -43,7 +41,6 @@ namespace Tree{
 		for(reg int i=head[u];i;i=Next[i]){
 			reg int v=to[i];
 			if(v!=father){
-				dis[v]=dis[u]+(v<=n);
 				DFS1(v,u);
 				size[u]+=size[v];
 				if(size[son[u]]<size[v])
@@ -52,27 +49,23 @@ namespace Tree{
 		}
 		return;
 	}
-	int tim,dfn[MAXN<<1];
 	int top[MAXN<<1];
 	inline void DFS2(reg int u,reg int father,reg int topf){
 		top[u]=topf;
-		dfn[u]=++tim;
 		if(son[u])
 			DFS2(son[u],u,topf);
-		for(reg int i=head[u];i;i=Next[i]){
-			reg int v=to[i];
-			if(v!=father&&v!=son[u])
-				DFS2(v,u,v);
-		}
+		for(reg int i=head[u];i;i=Next[i])
+			if(to[i]!=father&&to[i]!=son[u])
+				DFS2(to[i],u,to[i]);
 		return;
 	}
-	inline int LCA(int u,int v){
-		while(top[u]!=top[v]){
-			if(dep[top[u]]<dep[top[v]])
-				swap(u,v);
-			u=fa[top[u]];
+	inline int LCA(int x,int y){
+		while(top[x]!=top[y]){
+			if(dep[top[x]]<dep[top[y]])
+				swap(x,y);
+			x=fa[top[x]];
 		}
-		return dep[u]<dep[v]?u:v;
+		return dep[x]<dep[y]?x:y;
 	}
 }
 
@@ -84,13 +77,8 @@ namespace Graph{
 		head[u]=cnt;
 		return;
 	}
-	inline void Add_Tube(reg int u,reg int v){
-		Add_Edge(u,v);
-		Add_Edge(v,u);
-		return;
-	}
-	int tim,dfn[MAXN],low[MAXN];
 	int top,S[MAXN];
+	int tim,dfn[MAXN],low[MAXN];
 	inline void Tarjan(reg int u){
 		dfn[u]=low[u]=++tim;
 		S[++top]=u;
@@ -115,54 +103,26 @@ namespace Graph{
 	}
 }
 
-inline void Init(void){
-	Tree::cnt=Tree::tim=Graph::cnt=Graph::tim=0;
-	for(reg int i=1;i<=n;++i)
-		Graph::head[i]=0;
-	for(reg int i=1;i<=tot;++i)
-		Tree::head[i]=Tree::dfn[i]=0;
-	tot=n;
-	return;
-}
-
-inline int GetAns(reg int x,reg int y){
-	reg int lca=Tree::LCA(x,y);
-	return Tree::dis[x]+Tree::dis[y]-(Tree::dis[lca]<<1);
-}
-
-int p[MAXS];
-
-inline bool cmp(reg int a,reg int b){
-	return Tree::dfn[a]<Tree::dfn[b];
-}
-
 int main(void){
-	reg int T=read();
-	while(T--){
-		n=read(),m=read();
-		Init();
-		for(reg int i=1;i<=m;++i){
-			static int u,v;
-			u=read(),v=read();
-			Graph::Add_Tube(u,v);
-		}
-		Graph::Tarjan(1);
-		Tree::dis[1]=1;
-		Tree::DFS1(1,0);
-		Tree::DFS2(1,0,1);
-		reg int q=read();
-		while(q--){
-			reg int s=read();
-			for(reg int i=1;i<=s;++i)
-				p[i]=read();
-			sort(p+1,p+s+1,cmp);
-			p[s+1]=p[1];
-			reg int ans=0,x=0;
-			for(reg int i=1;i<=s;++i)
-				x+=GetAns(p[i],p[i+1]);
-			ans=x/2-s+(Tree::LCA(p[1],p[s])<=n);
-			printf("%d\n",ans);
-		}
+	n=read(),m=read();
+	tot=n;
+	for(reg int i=1;i<=m;++i){
+		static int u,v;
+		u=read(),v=read();
+		Graph::Add_Edge(u,v);
+		Graph::Add_Edge(v,u);
+	}
+	Graph::Tarjan(1);
+	Tree::DFS1(1,0);
+	Tree::DFS2(1,0,1);
+	q=read();
+	while(q--){
+		static int u,v;
+		u=read(),v=read();
+		using namespace Tree;
+		reg int lca=LCA(u,v);
+		reg int ans=((dep[u]+dep[v]-(dep[lca]<<1))>>1)+1;
+		printf("%d\n",ans);
 	}
 	return 0;
 }
