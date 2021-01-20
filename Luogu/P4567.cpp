@@ -15,12 +15,10 @@ inline int read(void){
 	return res;
 }
 
-inline void read(reg char *s,reg int n){
+inline void read(reg char *s){
 	*s=getchar();
-	while(n){
-		while(*s<32||*s>126)*s=getchar();
-		while(32<=*s&&*s<=126)*(++s)=getchar(),--n;
-	}
+	while(isspace(*s))*s=getchar();
+	while(!isspace(*s))*(++s)=getchar();
 	*s='\0';
 	return;
 }
@@ -29,20 +27,22 @@ const int MAXS=2*1024*1024+5;
 const int MAXSIZE=5e6;
 
 int ptr;
+int rt;
 
 namespace FHQTreap{
 	struct Node{
 		int ch[2];
 		int siz;
 		int val;
+		bool tRev;
 		#define ch(x) unit[(x)].ch
 		#define siz(x) unit[(x)].siz
 		#define val(x) unit[(x)].val
+		#define tRev(x) unit[(x)].tRev
 	};
 	#define lson(x) ch(x)[0]
 	#define rson(x) ch(x)[1]
 	int tot;
-	int rt;
 	int top;
 	char S[MAXSIZE];
 	Node unit[MAXSIZE];
@@ -51,7 +51,7 @@ namespace FHQTreap{
 	}
 	inline int New(reg int x){
 		reg int p=getId();
-		lson(p)=rson(p)=0,siz(p)=1,val(p)=x;
+		lson(p)=rson(p)=0,siz(p)=1,val(p)=x,tRev(p)=false;
 		return p;
 	}
 	inline int copy(reg int p){
@@ -63,11 +63,27 @@ namespace FHQTreap{
 		siz(p)=siz(lson(p))+siz(rson(p))+1;
 		return;
 	}
+	inline void Rev(reg int p){
+		swap(lson(p),rson(p));
+		tRev(p)=!tRev(p);
+		return;
+	}
+	inline void pushdown(reg int p){
+		if(tRev(p)){
+			if(lson(p))
+				lson(p)=copy(lson(p)),Rev(lson(p));
+			if(rson(p))
+				rson(p)=copy(rson(p)),Rev(rson(p));
+			tRev(p)=false;
+		}
+		return;
+	}
 	inline void split(reg int p,reg int k,reg int &x,reg int &y){
 		if(!p){
 			x=y=0;
 			return;
 		}
+		pushdown(p);
 		if(siz(lson(p))<k){
 			x=copy(p);
 			split(rson(x),k-siz(lson(p))-1,rson(x),y);
@@ -84,12 +100,14 @@ namespace FHQTreap{
 		if(!x||!y)
 			return x|y;
 		if(rand()%(siz(x)+siz(y))<siz(x)){
+			pushdown(x);
 			x=copy(x);
 			rson(x)=merge(rson(x),y);
 			pushup(x);
 			return x;
 		}
 		else{
+			pushdown(y);
 			y=copy(y);
 			lson(y)=merge(x,lson(y));
 			pushup(y);
@@ -109,18 +127,19 @@ namespace FHQTreap{
 	inline void print(reg int p){
 		if(!p)
 			return;
+		pushdown(p);
 		print(lson(p)),S[++top]=val(p),print(rson(p));
 		return;
 	}
 }
 
-inline void opt1(reg int k){
+inline void Move(reg int k){
 	using namespace FHQTreap;
 	ptr=k;
 	return;
 }
 
-inline void opt2(reg int n,reg char s[]){
+inline void Insert(reg int n,reg char s[]){
 	using namespace FHQTreap;
 	reg int p=build(1,n,s);
 	static int rt1,rt2;
@@ -129,7 +148,7 @@ inline void opt2(reg int n,reg char s[]){
 	return;
 }
 
-inline void opt3(reg int n){
+inline void Delete(reg int n){
 	using namespace FHQTreap;
 	static int rt1,mid,rt2;
 	split(rt,ptr,rt1,mid);
@@ -138,27 +157,38 @@ inline void opt3(reg int n){
 	return;
 }
 
-inline void opt4(reg int n){
+inline void Rotate(reg int n){
+	using namespace FHQTreap;
+	static int rt1,mid,rt2;
+	split(rt,ptr,rt1,mid);
+	split(mid,n,mid,rt2);
+	mid=copy(mid);
+	Rev(mid);
+	rt=merge(merge(rt1,mid),rt2);
+	return;
+}
+
+inline void Get(reg int n){
 	using namespace FHQTreap;
 	static int rt1,mid,rt2;
 	split(rt,ptr,rt1,mid);
 	split(mid,n,mid,rt2);
 	top=0;
 	print(mid);
-	for(reg int i=1;i<=top;++i)
-		putchar(S[i]);
+	if(S[1]!='\n')
+		putchar(S[1]);
 	putchar('\n');
 	rt=merge(merge(rt1,mid),rt2);
 	return;
 }
 
-inline void opt5(void){
+inline void Prev(void){
 	using namespace FHQTreap;
 	--ptr;
 	return;
 }
 
-inline void opt6(void){
+inline void Next(void){
 	using namespace FHQTreap;
 	++ptr;
 	return;
@@ -178,39 +208,44 @@ int main(void){
 	srand(time(0));
 	reg int t=read();
 	while(t--){
-		static char opt;
+		static char opt[64];
 		static int n,k;
 		static char s[MAXS];
-		do
-			opt=getchar();
-		while(!isalpha(opt)||opt>96);
-		switch(opt){
+		read(opt);
+		switch(opt[0]){
 			case 'M':{
 				k=read();
-				opt1(k);
+				Move(k);
 				break;
 			}
 			case 'I':{
-				n=read(),read(s+1,n);
-				opt2(n,s);
+				n=read();
+				reg int tot=0;
+				while(tot<n)
+					s[++tot]=getchar();
+				Insert(n,s);
 				break;
 			}
 			case 'D':{
 				n=read();
-				opt3(n);
+				Delete(n);
+				break;
+			}
+			case 'R':{
+				n=read();
+				Rotate(n);
 				break;
 			}
 			case 'G':{
-				n=read();
-				opt4(n);
+				Get(1);
 				break;
 			}
 			case 'P':{
-				opt5();
+				Prev();
 				break;
 			}
 			case 'N':{
-				opt6();
+				Next();
 				break;
 			}
 		}
