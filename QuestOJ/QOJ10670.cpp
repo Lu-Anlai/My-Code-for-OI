@@ -10,7 +10,7 @@ inline int read(void){
 	return res;
 }
 
-const int MAXN=1e5+5;
+const int MAXN=5e3+5;
 
 struct Node{
 	double x,y;
