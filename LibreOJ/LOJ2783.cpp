@@ -51,6 +51,15 @@ namespace SegmentTree{
 			id(k)=id(rson),val(k)=val(rson);
 		return;
 	}
+	int limit;
+	inline void build(reg int n){
+		limit=1;
+		while(limit<n)
+			limit<<=1;
+		for(reg int i=limit+1;i<=limit+n;++i)
+			
+		return;
+	}
 	inline void build(reg int k,reg int l,reg int r,reg ll dis[]){
 		if(l==r){
 			id(k)=l,val(k)=dis[l];
