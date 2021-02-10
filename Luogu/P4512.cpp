@@ -71,24 +71,6 @@ namespace Poly{
 			printf("%d%c",a[i],i==siz-1?'\n':' ');
 		return;
 	}
-	inline poly der(poly a){
-		for(reg int i=0,siz=a.size();i<siz-1;++i)
-			a[i]=1ll*(i+1)*a[i+1]%p;
-		a.pop_back();
-		return a;
-	}
-	inline poly itg(poly a){
-		vector<int> inv;
-		inv.resize(a.size()+1);
-		inv[0]=inv[1]=1;
-		for(reg int i=2,siz=inv.size();i<siz;++i)
-			inv[i]=1ll*(p-p/i)*inv[p%i]%p;
-		a.resize(a.size()+1);
-		for(reg int i=a.size()-1;i>0;--i)
-			a[i]=1ll*a[i-1]*inv[i]%p;
-		a[0]=0;
-		return a;
-	}
 	inline poly mul(poly a,poly b){
 		reg int s=a.size()+b.size()-1;
 		reg int limit=getRev(s);
@@ -120,23 +102,41 @@ namespace Poly{
 		Inv.resize(deg);
 		return Inv;
 	}
-	inline poly ln(const poly& a){
-		poly res=itg(mul(der(a),inv(a)));
-		res.resize(a.size());
-		return res;
+	inline poly R(poly a){
+		reverse(a.begin(),a.end());
+		return a;
+	}
+	inline pair<poly,poly> div(poly a,poly b){
+		reg int n=a.size(),m=b.size();
+		poly aR=R(a),bR=R(b);
+		aR.resize(n-m+1),bR.resize(n-m+1);
+		poly q=mul(aR,inv(bR));
+		q.resize(n-m+1);
+		q=R(q);
+		poly r=q;
+		reg int limit=getRev(n);
+		a.resize(limit),b.resize(limit),r.resize(limit);
+		NTT(a,limit,1),NTT(b,limit,1),NTT(r,limit,1);
+		for(reg int i=0;i<limit;++i)
+			r[i]=sub(a[i],1ll*b[i]*r[i]%p);
+		NTT(r,limit,-1);
+		r.resize(m-1);
+		return make_pair(q,r);
 	}
 }
 
 using namespace Poly;
 
 int main(void){
-	reg int n=read();
-	poly a;
-	a.resize(n);
+	reg int n=read()+1,m=read()+1;
+	poly a,b;
+	a.resize(n),b.resize(m);
 	for(reg int i=0;i<n;++i)
 		a[i]=read();
-	poly res=ln(a);
-	for(reg int i=0;i<n;++i)
-		printf("%d%c",res[i],i==n-1?'\n':' ');
+	for(reg int i=0;i<m;++i)
+		b[i]=read();
+	pair<poly,poly> res=div(a,b);
+	print(res.first);
+	print(res.second);
 	return 0;
 }
