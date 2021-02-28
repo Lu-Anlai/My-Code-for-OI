@@ -3,7 +3,7 @@ using namespace std;
 #define reg register
 typedef long long ll;
 
-const int MAXN=1e5+5;
+const int MAXN=2e5+5;
 
 int n,m;
 int a[MAXN];
@@ -33,7 +33,7 @@ namespace BIT1{
 
 namespace BIT2{
 	namespace SegmentTree{
-		const int MAXSIZE=2e7+5;
+		const int MAXSIZE=4e7+5;
 		#define mid ( ( (l) + (r) ) >> 1 )
 		struct Node{
 			int lson,rson;
@@ -44,9 +44,14 @@ namespace BIT2{
 		};
 		int tot;
 		Node unit[MAXSIZE];
+		inline int New(void){
+			reg int p=++tot;
+			lson(p)=rson(p)=siz(p)=0;
+			return p;
+		}
 		inline void update(reg int &p,reg int l,reg int r,reg int pos,reg int val){
 			if(!p)
-				p=++tot;
+				p=New();
 			siz(p)+=val;
 			if(l!=r){
 				if(pos<=mid)
@@ -99,26 +104,27 @@ namespace BIT2{
 int pos[MAXN];
 
 int main(void){
-	scanf("%d%d",&n,&m);
-	BIT1::Init(n),BIT2::Init(n);
-	reg ll ans=0;
-	for(reg int i=1;i<=n;++i){
-		scanf("%d",&a[i]);
-		pos[a[i]]=i;
-		BIT1::update(a[i],1);
-		ans+=i-BIT1::query(a[i]);
-		BIT2::update(i,a[i],1);
-	}
-	while(m--){
-		printf("%lld\n",ans);
-		static int x,y;
-		scanf("%d",&y);
-		x=pos[y];
-		if(1<x&&y<n)
-			ans-=BIT2::query(1,x-1,y+1,n);
-		if(x<n&&1<y)
-			ans-=BIT2::query(x+1,n,1,y-1);
-		BIT2::update(x,y,-1);
+	while(scanf("%d%d",&n,&m)!=EOF){
+		BIT1::Init(n),BIT2::Init(n);
+		reg ll ans=0;
+		for(reg int i=1;i<=n;++i){
+			scanf("%d",&a[i]);
+			pos[a[i]]=i;
+			BIT1::update(a[i],1);
+			ans+=i-BIT1::query(a[i]);
+			BIT2::update(i,a[i],1);
+		}
+		while(m--){
+			printf("%lld\n",ans);
+			static int x,y;
+			scanf("%d",&y);
+			x=pos[y];
+			if(1<x&&y<n)
+				ans-=BIT2::query(1,x-1,y+1,n);
+			if(x<n&&1<y)
+				ans-=BIT2::query(x+1,n,1,y-1);
+			BIT2::update(x,y,-1);
+		}
 	}
 	return 0;
 }

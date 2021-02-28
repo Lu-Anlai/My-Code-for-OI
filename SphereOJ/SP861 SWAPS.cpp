@@ -2,8 +2,31 @@
 using namespace std;
 #define reg register
 typedef long long ll;
+#define getchar() (p1==p2&&(p2=(p1=buf)+fread(buf,1,100000,stdin),p1==p2)?EOF:*p1++)
+static char buf[100000],*p1=buf,*p2=buf;
+#define flush() (fwrite(wbuf,1,wp1,stdout),wp1=0)
+#define putchar(c) (wp1==wp2&&(flush(),0),wbuf[wp1++]=c)
+static char wbuf[1<<21];int wp1;const int wp2=1<<21;
+inline int read(void){
+	reg char ch=getchar();
+	reg int res=0;
+	while(!isdigit(ch))ch=getchar();
+	while(isdigit(ch))res=10*res+(ch^'0'),ch=getchar();
+	return res;
+}
 
-const int MAXN=1e5+5;
+inline void writeln(reg ll x){
+	static char buf[32];
+	reg int p=-1;
+	if(x==0) putchar('0');
+	else while(x) buf[++p]=(x%10)^'0',x/=10;
+	while(~p) putchar(buf[p--]);
+	putchar('\n');
+	return;
+}
+
+const int MAXN=2.5e5+5;
+const int MAXA=5e4+5;
 
 int n,m;
 int a[MAXN];
@@ -12,10 +35,9 @@ namespace BIT1{
 	inline int lowbit(reg int x){
 		return x&(-x);
 	}
-	int n,unit[MAXN];
+	int n,unit[MAXA];
 	inline void Init(reg int s){
 		n=s;
-		memset(unit,0,sizeof(unit));
 		return;
 	}
 	inline void update(reg int id,reg int val){
@@ -30,6 +52,8 @@ namespace BIT1{
 		return res;
 	}
 }
+
+const int A=5e4;
 
 namespace BIT2{
 	namespace SegmentTree{
@@ -77,18 +101,17 @@ namespace BIT2{
 	inline void Init(reg int s){
 		n=s;
 		memset(rt,0,sizeof(rt));
-		SegmentTree::tot=0;
 		return;
 	}
 	inline void update(reg int id,reg int pos,reg int val){
 		for(reg int i=id;i<=n;i+=lowbit(i))
-			SegmentTree::update(rt[i],1,n,pos,val);
+			SegmentTree::update(rt[i],1,A,pos,val);
 		return;
 	}
 	inline int query(reg int id,reg int L,reg int R){
 		reg int res=0;
 		for(reg int i=id;i;i^=lowbit(i))
-			res+=SegmentTree::query(rt[i],1,n,L,R);
+			res+=SegmentTree::query(rt[i],1,A,L,R);
 		return res;
 	}
 	inline int query(reg int l,reg int r,reg int L,reg int R){
@@ -96,29 +119,39 @@ namespace BIT2{
 	}
 }
 
-int pos[MAXN];
-
 int main(void){
-	scanf("%d%d",&n,&m);
-	BIT1::Init(n),BIT2::Init(n);
+	n=read();
+	BIT1::Init(A),BIT2::Init(n);
 	reg ll ans=0;
 	for(reg int i=1;i<=n;++i){
-		scanf("%d",&a[i]);
-		pos[a[i]]=i;
+		a[i]=read();
 		BIT1::update(a[i],1);
 		ans+=i-BIT1::query(a[i]);
 		BIT2::update(i,a[i],1);
 	}
+	m=read();
 	while(m--){
-		printf("%lld\n",ans);
 		static int x,y;
-		scanf("%d",&y);
-		x=pos[y];
-		if(1<x&&y<n)
-			ans-=BIT2::query(1,x-1,y+1,n);
-		if(x<n&&1<y)
-			ans-=BIT2::query(x+1,n,1,y-1);
-		BIT2::update(x,y,-1);
+		x=read(),y=read();
+		if(a[x]!=y){
+			if(1<x){
+				if(a[x]<A)
+					ans-=BIT2::query(1,x-1,a[x]+1,A);
+				if(y<A)
+					ans+=BIT2::query(1,x-1,y+1,A);
+			}
+			if(x<n){
+				if(1<a[x])
+					ans-=BIT2::query(x+1,n,1,a[x]-1);
+				if(1<y)
+					ans+=BIT2::query(x+1,n,1,y-1);
+			}
+			BIT2::update(x,a[x],-1);
+			a[x]=y;
+			BIT2::update(x,a[x],1);
+		}
+		writeln(ans);
 	}
+	flush();
 	return 0;
 }
