@@ -45,6 +45,81 @@ inline int inv(reg int x){
 	return fpow(x,mod-2);
 }
 
+namespace SegmentTree{
+	#define lson ( (k) << 1 )
+	#define rson ( (k) << 1 | 1 )
+	#define mid ( ( (l) + (r) ) >> 1 )
+	struct Node{
+		int Max;
+		int tCov;
+		#define Max(x) unit[(x)].Max
+		#define tCov(x) unit[(x)].tCov
+	};
+	Node unit[MAXN<<2];
+	inline void pushup(reg int k){
+		Max(k)=max(Max(lson),Max(rson));
+		return;
+	}
+	inline void build(reg int k,reg int l,reg int r,reg int c[]){
+		tCov(k)=-1;
+		if(l==r){
+			Max(k)=c[l];
+			return;
+		}
+		build(lson,l,mid,c),build(rson,mid+1,r,c);
+		pushup(k);
+		return;
+	}
+	inline void cov(reg int k,reg int val){
+		Max(k)=val;
+		tCov(k)=val;
+		return;
+	}
+	inline void pushdown(reg int k){
+		if(tCov(k)!=-1){
+			cov(lson,tCov(k)),cov(rson,tCov(k));
+			tCov(k)=-1;
+		}
+		return;
+	}
+	inline void update(reg int k,reg int l,reg int r,reg int L,reg int R,reg int val){
+		if(L<=l&&r<=R){
+			cov(k,val);
+			return;
+		}
+		pushdown(k);
+		if(L<=mid)
+			update(lson,l,mid,L,R,val);
+		if(R>mid)
+			update(rson,mid+1,r,L,R,val);
+		pushup(k);
+		return;
+	}
+	inline int query(reg int k,reg int l,reg int r,reg int val){
+		if(Max(k)<=val)
+			return r+1;
+		if(l==r)
+			return l;
+		pushdown(k);
+		if(Max(lson)<=val)
+			return query(rson,mid+1,r,val);
+		else
+			return query(lson,l,mid,val);
+	}
+	inline int getVal(reg int k,reg int l,reg int r,reg int pos){
+		if(l==r)
+			return Max(k);
+		pushdown(k);
+		if(pos<=mid)
+			return getVal(lson,l,mid,pos);
+		else
+			return getVal(rson,mid+1,r,pos);
+	}
+	#undef lson
+	#undef rson
+	#undef mid
+}
+
 struct Data{
 	int cnt,pod;
 	inline Data(reg int cnt=0,reg int pod=1):cnt(cnt),pod(pod){
@@ -179,20 +254,26 @@ struct Node{
 int tot;
 Node S[MAXN];
 
-inline void update(reg int x,reg int y,const Node& a){
-	if(y==a.val)
+inline void update(reg int y,reg int l,reg int r,reg int val){
+	if(y==val)
 		return;
-	reg int len=a.r-a.l+1;
-	reg int cnt=BIT::queryCnt(a.l,a.r,a.val);
-	ans=1ll*ans*fpow(fpow(a.val,len-cnt),mod-2)%mod;
-	reg int pod=BIT::queryPod(a.l,a.r,a.val+1,y);
+	reg int len=r-l+1;
+	reg int cnt=BIT::queryCnt(l,r,val);
+	ans=1ll*ans*fpow(fpow(val,len-cnt),mod-2)%mod;
+	reg int pod=BIT::queryPod(l,r,val+1,y);
 	ans=1ll*ans*pod%mod;
-	reg int cntN=BIT::queryCnt(a.l,a.r,y);
+	reg int cntN=BIT::queryCnt(l,r,y);
 	ans=1ll*ans*fpow(y,len-cntN)%mod;
 	return;
 }
 
 inline void updateA(reg int x,reg int y){
+	reg int ptr=x;
+	while(true){
+		reg int val=SegmentTree::getVal(1,1,n,x);
+		
+	}
+	printf("updateA %d %d\n",x,y);
 	reg int l=1,r=tot+1,mid;
 	while(l<r){
 		mid=(l+r)>>1;
@@ -205,13 +286,23 @@ inline void updateA(reg int x,reg int y){
 	l=1,r=tot;
 	while(l<r){
 		mid=(l+r)>>1;
-		if(S[mid].l<x)
-			l=mid+1;
-		else
+		if(x<=S[mid].r)
 			r=mid;
+		else
+			l=mid+1;
 	}
 	reg int L=l;
+	printf("L=%d R=%d\n",L,R);
+	if(L>R)
+		return;
+	if(S[L].l!=x){
+		for(reg int i=tot;i>=L;++i)
+			S[i+1]=S[i];
+		++tot;
+
+	}
 	if(S[L].l==x){
+		puts("S1");
 		for(reg int i=L;i<=R;++i)
 			update(x,y,S[i]);
 		S[L].r=S[R].r;
@@ -222,15 +313,23 @@ inline void updateA(reg int x,reg int y){
 		S[tot+1]=Node(inf,inf,inf);
 	}
 	else{
+		puts("S2");
+		for(reg int i=1;i<=tot+1;++i)
+			printf("(%d,%d,%d)%c",S[i].l,S[i].r,S[i].val,i==tot+1?'\n':' ');
 		update(x,y,Node(x,S[L].r,S[L].val));
 		for(reg int i=L+1;i<=R;++i)
 			update(x,y,S[i]);
+		S[L+1].r=S[R].r;
 		S[L].r=x-1;
 		S[L+1].l=x;
-		S[L+1].r=S[R].r;
 		S[L+1].val=y;
-		for(reg int i=R+1;i<=tot;++i)
+		for(reg int i=1;i<=tot+1;++i)
+			printf("(%d,%d,%d)%c",S[i].l,S[i].r,S[i].val,i==tot+1?'\n':' ');
+		for(reg int i=R+1;i<=tot;++i){
+
 			S[i-R+1+L]=S[i];
+			printf("%d <- %d\n",i-R+1+L,i);
+		}
 		tot-=R-L-1;
 		S[tot+1]=Node(inf,inf,inf);
 	}
@@ -268,13 +367,13 @@ int main(void){
 	n=read(),q=read();
 	for(reg int i=1;i<=n;++i){
 		a[i]=read();
-		if(!tot||S[tot].val<a[i])
-			S[++tot]=Node(i,i,a[i]);
-		else
-			++S[tot].r;
 		c[i]=max(c[i-1],a[i]);
 	}
+	SegmentTree::build(1,1,n,c);
+
 	S[tot+1]=Node(inf,inf,inf);
+	for(reg int i=1;i<=tot+1;++i)
+		printf("(%d,%d,%d)%c",S[i].l,S[i].r,S[i].val,i==tot+1?'\n':' ');
 	BIT::Init(n);
 	for(reg int i=1;i<=n;++i){
 		b[i]=read();
@@ -296,7 +395,9 @@ int main(void){
 				break;
 			}
 		}
-		writeln(ans);
+		for(reg int i=1;i<=tot+1;++i)
+			printf("(%d,%d,%d)%c",S[i].l,S[i].r,S[i].val,i==tot+1?'\n':' ');
+		printf("%d\n",ans);
 	}
 	flush();
 	return 0;
