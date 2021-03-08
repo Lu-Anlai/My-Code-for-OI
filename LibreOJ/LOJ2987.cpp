@@ -143,6 +143,8 @@ namespace SegmentTree{
 }
 
 int main(void){
+	freopen("travel.in","r",stdin);
+	freopen("travel.out","w",stdout);
 	n=read(),m=read(),c[0]=readll();
 	for(reg int i=1;i<n;++i){
 		static int opt,fr,id;
@@ -185,5 +187,7 @@ int main(void){
 	for(reg int i=1;i<=m;++i)
 		writeln(ans[i]);
 	flush();
+	fclose(stdin);
+	fclose(stdout);
 	return 0;
 }
