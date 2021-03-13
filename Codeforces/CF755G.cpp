@@ -24,6 +24,10 @@ inline void write(reg int x){
 	return;
 }
 
+inline int min(reg int a,reg int b){
+	return a<b?a:b;
+}
+
 namespace Poly{
 	const int p=998244353;
 	const int g=3;
@@ -46,7 +50,6 @@ namespace Poly{
 		}
 		return res;
 	}
-	typedef vector<int> poly;
 	vector<int> rev;
 	inline int getRev(reg int n){
 		reg int limit=1,l=0;
@@ -57,6 +60,7 @@ namespace Poly{
 			rev[i]=(rev[i>>1]>>1)|((i&1)<<(l-1));
 		return limit;
 	}
+	typedef vector<int> poly;
 	inline void NTT(reg poly& a,reg int limit,reg int flag){
 		for(reg int i=0;i<limit;++i)
 			if(i<rev[i])
@@ -78,22 +82,10 @@ namespace Poly{
 		}
 		return;
 	}
-	inline void print(const poly& a){
-		for(reg int i=0,siz=a.size();i<siz;++i)
-			write(a[i]),putchar(i==siz-1?'\n':' ');
-		return;
-	}
-	inline poly add(poly a,poly b){
-		reg int s=max(a.size(),b.size());
-		a.resize(s),b.resize(s);
-		for(reg int i=0;i<s;++i)
-			a[i]=add(a[i],b[i]);
-		return a;
-	}
 	inline poly mul(poly a,poly b){
 		reg int s=a.size()+b.size()-1;
 		reg int limit=getRev(s);
-		a.resize(limit,0),b.resize(limit,0);
+		a.resize(limit),b.resize(limit);
 		NTT(a,limit,1),NTT(b,limit,1);
 		for(reg int i=0;i<limit;++i)
 			a[i]=1ll*a[i]*b[i]%p;
@@ -101,56 +93,46 @@ namespace Poly{
 		a.resize(s);
 		return a;
 	}
-	inline poly inv(poly a){
-		reg int deg=a.size();
-		if(deg==1){
-			poly res;
-			res.resize(1);
-			res[0]=fpow(a[0],p-2);
-			return res;
-		}
-		poly tmp=a;
-		tmp.resize((deg+1)>>1);
-		poly Inv=inv(tmp);
-		reg int limit=getRev(deg<<1);
-		Inv.resize(limit,0),a.resize(limit,0);
-		NTT(Inv,limit,1),NTT(a,limit,1);
-		for(reg int i=0;i<limit;++i)
-			Inv[i]=1ll*sub(2,1ll*a[i]*Inv[i]%p)*Inv[i]%p;
-		NTT(Inv,limit,-1);
-		Inv.resize(deg);
-		return Inv;
+}
+
+using namespace Poly;
+
+const int MAXK=(1<<15)+5;
+
+int fac[MAXK],invfac[MAXK];
+int dfac[MAXK],bas[MAXK];
+
+inline void Init(reg int n,reg int val){
+	fac[0]=1,bas[0]=1,dfac[0]=1;
+	for(reg int i=1;i<=n;++i){
+		fac[i]=1ll*fac[i-1]*i%p;
+		bas[i]=add(bas[i-1],bas[i-1]);
+		dfac[i]=1ll*dfac[i-1]*(val-i+1)%p;
 	}
-	inline poly sqrt(poly a){
-		reg int deg=a.size();
-		if(deg==1){
-			poly res;
-			res.resize(1);
-			res[0]=1;
-			return res;
-		}
-		poly tmp=a;
-		tmp.resize((deg+1)>>1);
-		poly Sqrt=sqrt(tmp);
-		Sqrt.resize(deg);
-		poly mid=mul(a,inv(Sqrt));
-		mid.resize(deg);
-		poly res=add(Sqrt,mid);
-		reg int inv2=fpow(2,p-2);
-		for(reg int i=0;i<deg;++i)
-			res[i]=1ll*inv2*res[i]%p;
-		return res;
-	}
+	invfac[n]=fpow(fac[n],p-2);
+	for(reg int i=n-1;i>=0;--i)
+		invfac[i]=1ll*invfac[i+1]*(i+1)%p;
+	return;
 }
 
 int main(void){
-	reg int n=read();
-	Poly::poly a;
-	a.resize(n);
-	for(reg int i=0;i<n;++i)
-		a[i]=read();
-	a=Poly::sqrt(a);
-	Poly::print(a);
+	reg int n=read(),k=read();
+	reg int m=min(n,k);
+	Init(m,n);
+	poly a,b;
+	a.resize(m+1),b.resize(m+1);
+	for(reg int i=0;i<=m;++i){
+		if(i&1)
+			a[i]=sub(0,1ll*invfac[i]*fpow(dfac[i],p-2)%p);
+		else
+			a[i]=1ll*invfac[i]*fpow(dfac[i],p-2)%p;
+		b[i]=1ll*invfac[i]*invfac[i]%p*bas[i]%p;
+	}
+	poly ans=mul(a,b);
+	for(reg int i=1;i<=m;++i)
+		write(1ll*ans[i]*fac[i]%p*dfac[i]%p),putchar(i==k?'\n':' ');
+	for(reg int i=m+1;i<=k;++i)
+		putchar('0'),putchar(i==k?'\n':' ');
 	flush();
 	return 0;
 }

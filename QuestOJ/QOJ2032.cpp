@@ -4,9 +4,6 @@ using namespace std;
 typedef long long ll;
 #define getchar() (p1==p2&&(p2=(p1=buf)+fread(buf,1,100000,stdin),p1==p2)?EOF:*p1++)
 static char buf[100000],*p1=buf,*p2=buf;
-#define flush() (fwrite(wbuf,1,wp1,stdout),wp1=0)
-#define putchar(c) (wp1==wp2&&(flush(),0),wbuf[wp1++]=c)
-static char wbuf[1<<21];int wp1;const int wp2=1<<21;
 inline int read(void){
 	reg char ch=getchar();
 	reg int res=0;
@@ -15,13 +12,12 @@ inline int read(void){
 	return res;
 }
 
-inline void write(reg int x){
-	static char buf[32];
-	reg int p=-1;
-	if(x==0) putchar('0');
-	else while(x) buf[++p]=(x%10)^'0',x/=10;
-	while(~p) putchar(buf[p--]);
-	return;
+inline ll readll(void){
+	reg char ch=getchar();
+	reg ll res=0;
+	while(!isdigit(ch))ch=getchar();
+	while(isdigit(ch))res=10*res+(ch^'0'),ch=getchar();
+	return res;
 }
 
 namespace Poly{
@@ -46,17 +42,20 @@ namespace Poly{
 		}
 		return res;
 	}
-	typedef vector<int> poly;
 	vector<int> rev;
+	int las;
 	inline int getRev(reg int n){
 		reg int limit=1,l=0;
 		while(limit<n)
 			limit<<=1,++l;
+		if(limit==las)
+			return limit;
 		rev.resize(limit);
 		for(reg int i=0;i<limit;++i)
 			rev[i]=(rev[i>>1]>>1)|((i&1)<<(l-1));
-		return limit;
+		return las=limit;
 	}
+	typedef vector<int> poly;
 	inline void NTT(reg poly& a,reg int limit,reg int flag){
 		for(reg int i=0;i<limit;++i)
 			if(i<rev[i])
@@ -78,22 +77,10 @@ namespace Poly{
 		}
 		return;
 	}
-	inline void print(const poly& a){
-		for(reg int i=0,siz=a.size();i<siz;++i)
-			write(a[i]),putchar(i==siz-1?'\n':' ');
-		return;
-	}
-	inline poly add(poly a,poly b){
-		reg int s=max(a.size(),b.size());
-		a.resize(s),b.resize(s);
-		for(reg int i=0;i<s;++i)
-			a[i]=add(a[i],b[i]);
-		return a;
-	}
 	inline poly mul(poly a,poly b){
 		reg int s=a.size()+b.size()-1;
 		reg int limit=getRev(s);
-		a.resize(limit,0),b.resize(limit,0);
+		a.resize(limit),b.resize(limit);
 		NTT(a,limit,1),NTT(b,limit,1);
 		for(reg int i=0;i<limit;++i)
 			a[i]=1ll*a[i]*b[i]%p;
@@ -101,56 +88,64 @@ namespace Poly{
 		a.resize(s);
 		return a;
 	}
-	inline poly inv(poly a){
-		reg int deg=a.size();
-		if(deg==1){
-			poly res;
-			res.resize(1);
-			res[0]=fpow(a[0],p-2);
-			return res;
-		}
-		poly tmp=a;
-		tmp.resize((deg+1)>>1);
-		poly Inv=inv(tmp);
-		reg int limit=getRev(deg<<1);
-		Inv.resize(limit,0),a.resize(limit,0);
-		NTT(Inv,limit,1),NTT(a,limit,1);
-		for(reg int i=0;i<limit;++i)
-			Inv[i]=1ll*sub(2,1ll*a[i]*Inv[i]%p)*Inv[i]%p;
-		NTT(Inv,limit,-1);
-		Inv.resize(deg);
-		return Inv;
+}
+
+using namespace Poly;
+
+const int MAXK=3e4+5;
+
+ll n;
+int k;
+int fac[MAXK],invfac[MAXK];
+int bas[MAXK];
+
+inline void Init(reg int n){
+	fac[0]=bas[0]=1;
+	for(reg int i=1;i<=n;++i){
+		fac[i]=1ll*fac[i-1]*i%p;
+		bas[i]=add(bas[i-1],bas[i-1]);
 	}
-	inline poly sqrt(poly a){
-		reg int deg=a.size();
-		if(deg==1){
-			poly res;
-			res.resize(1);
-			res[0]=1;
-			return res;
-		}
-		poly tmp=a;
-		tmp.resize((deg+1)>>1);
-		poly Sqrt=sqrt(tmp);
-		Sqrt.resize(deg);
-		poly mid=mul(a,inv(Sqrt));
-		mid.resize(deg);
-		poly res=add(Sqrt,mid);
-		reg int inv2=fpow(2,p-2);
-		for(reg int i=0;i<deg;++i)
-			res[i]=1ll*inv2*res[i]%p;
+	invfac[n]=fpow(fac[n],p-2);
+	for(reg int i=n-1;i>=0;--i)
+		invfac[i]=1ll*invfac[i+1]*(i+1)%p;
+	return;
+}
+
+inline poly solve(reg int n){
+	if(n==1){
+		poly res;
+		res.resize(k+1);
+		res[0]=0;
+		for(reg int i=1;i<=k;++i)
+			res[i]=invfac[i];
 		return res;
 	}
+	poly res,a;
+	reg int tmp=n>>1;
+	res=solve(tmp);
+	a.resize(k+1);
+	for(reg int i=1,pod=bas[tmp];i<=k;++i,pod=1ll*pod*bas[tmp]%p)
+		a[i]=1ll*res[i]*pod%p;
+	res=mul(res,a);
+	res.resize(k+1);
+	if(n&1){
+		for(reg int i=1,pod=2;i<=k;++i,pod=add(pod,pod)){
+			res[i]=1ll*res[i]*pod%p;
+			a[i]=invfac[i];
+		}
+		res=mul(res,a);
+		res.resize(k+1);
+	}
+	return res;
 }
 
 int main(void){
-	reg int n=read();
-	Poly::poly a;
-	a.resize(n);
-	for(reg int i=0;i<n;++i)
-		a[i]=read();
-	a=Poly::sqrt(a);
-	Poly::print(a);
-	flush();
+	n=readll(),k=read();
+	Init(k);
+	poly res=solve(n);
+	reg int ans=0;
+	for(reg int i=n;i<=k;++i)
+		ans=add(ans,1ll*res[i]*fac[k]%p*invfac[k-i]%p);
+	printf("%d\n",ans);
 	return 0;
 }
