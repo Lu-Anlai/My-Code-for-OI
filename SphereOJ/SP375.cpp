@@ -29,7 +29,7 @@ inline int max(reg int a,reg int b){
 	return a>b?a:b;
 }
 
-const int MAXN=1e5+5;
+const int MAXN=1e4+5;
 
 int n;
 int u[MAXN],v[MAXN],w[MAXN];
@@ -47,6 +47,7 @@ int siz[MAXN],son[MAXN];
 
 inline void dfs1(reg int u,reg int father){
 	siz[u]=1;
+	son[u]=0;
 	fa[u]=father;
 	dep[u]=dep[father]+1;
 	for(reg int i=head[u];i;i=Next[i]){
@@ -143,40 +144,45 @@ inline int query(reg int x,reg int y){
 }
 
 int main(void){
-	n=read();
-	for(reg int i=1;i<n;++i){
-		u[i]=read(),v[i]=read(),w[i]=read();
-		Add_Edge(u[i],v[i]),Add_Edge(v[i],u[i]);
-	}
-	dfs1(1,0),dfs2(1,0,1);
-	static int val[MAXN];
-	for(reg int i=1;i<n;++i){
-		reg int son=dep[u[i]]>dep[v[i]]?u[i]:v[i];
-		val[dfn[son]]=w[i];
-	}
-	SegmentTree::build(1,1,n,val);
-	reg bool flag=true;
-	while(flag){
-		static char opt;
-		static int a,b;
-		do
-			opt=getchar();
-		while(!isalpha(opt));
-		switch(opt){
-			case 'Q':{
-				a=read(),b=read();
-				writeln(query(a,b));
-				break;
-			}
-			case 'C':{
-				a=read(),b=read();
-				reg int son=dep[u[a]]>dep[v[a]]?u[a]:v[a];
-				SegmentTree::update(1,1,n,dfn[son],b);
-				break;
-			}
-			case 'D':{
-				flag=false;
-				break;
+	reg int t=read();
+	while(t--){
+		n=read();
+		cnt=0,fill(head+1,head+n+1,0);
+		tim=0;
+		for(reg int i=1;i<n;++i){
+			u[i]=read(),v[i]=read(),w[i]=read();
+			Add_Edge(u[i],v[i]),Add_Edge(v[i],u[i]);
+		}
+		dfs1(1,0),dfs2(1,0,1);
+		static int val[MAXN];
+		for(reg int i=1;i<n;++i){
+			reg int son=dep[u[i]]>dep[v[i]]?u[i]:v[i];
+			val[dfn[son]]=w[i];
+		}
+		SegmentTree::build(1,1,n,val);
+		reg bool flag=true;
+		while(flag){
+			static char opt;
+			static int a,b;
+			do
+				opt=getchar();
+			while(!isalpha(opt));
+			switch(opt){
+				case 'Q':{
+					a=read(),b=read();
+					writeln(query(a,b));
+					break;
+				}
+				case 'C':{
+					a=read(),b=read();
+					reg int son=dep[u[a]]>dep[v[a]]?u[a]:v[a];
+					SegmentTree::update(1,1,n,dfn[son],b);
+					break;
+				}
+				case 'D':{
+					flag=false;
+					break;
+				}
 			}
 		}
 	}
